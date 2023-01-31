@@ -13,14 +13,16 @@ class SendSmtp {
 
   // String receipt='';
   List<String> receipt=[];
-  String body ='';
+  String body ='',mailtype='INFO',subject='';
   List<Message> emailQueue = [];
   List<SendReport> sendreport = [];
 
-  SendSmtp(List<String> text, String text2){
+  SendSmtp(List<String> text, String text2,String mailtype,String subject){
     print("data receive $text $text2");
     receipt=text;
     body=text2;
+    this.mailtype=mailtype;
+    this.subject=subject;
   }
 
   sendmails() async {
@@ -29,9 +31,9 @@ class SendSmtp {
 
     receipt.forEach((element) {
       Message msg = Message()
-        ..from = Address(emailId, 'Bulk Test')
+        ..from = Address(emailId, mailtype)
         ..recipients.add(element)
-        ..subject = 'Testing Mail'
+        ..subject = subject
         ..text = 'This is the plain text.\nThis is line 2 of the text part.'
         ..html = "<h1>Test</h1>\n<p>Hey! Here's your message that you inserted</p>";
       emailQueue.add(msg);
