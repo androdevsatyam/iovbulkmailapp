@@ -10,7 +10,12 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ViewModelBuilder<HomeViewModel>.reactive(
-      onViewModelReady: (model) {},
+      onViewModelReady: (model) {
+        model.mailSubject.text="Happy Birthday";
+        model.mailPerson.text="birthday";
+        model.receipientController.text="satyamiovrvf@gmail.com";
+        model.messageController.text="satyam";
+      },
       viewModelBuilder: () => HomeViewModel(),
       builder: (context, model, chile) {
         return Scaffold(
@@ -108,7 +113,7 @@ class HomeView extends StatelessWidget {
                                           borderSide: BorderSide(
                                               color: Colors.indigoAccent,
                                               width: 1)),
-                                      hintText: "Message"),
+                                      hintText: "Birthday Name"),
                                 ),
                                 SizedBox(
                                   height: 10,
