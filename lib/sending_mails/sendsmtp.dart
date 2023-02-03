@@ -14,14 +14,15 @@ class SendSmtp {
 
   // String receipt='';
   List<String> receipt = [];
-  String body = '', mailtype = 'INFO', subject = '';
+  List<String> names = [];
+  String body = 'empty body', mailtype = 'INFO', subject = '';
   List<Message> emailQueue = [];
   List<SendReport> sendreport = [];
 
-  SendSmtp(List<String> text, String text2, String mailtype, String subject) {
-    print("data receive $text $text2");
-    receipt = text;
-    body = text2;
+  SendSmtp(List<String> emails, List<String> names, String mailtype, String subject) {
+    print("data receive $emails $names");
+    receipt = emails;
+    this.names = names;
     this.mailtype = mailtype;
     this.subject = subject;
   }
@@ -36,12 +37,12 @@ class SendSmtp {
 
     receipt.forEach((element) {
       Message msg;
-      if (subject.contains("birthday")) {
+      if (subject.toLowerCase().contains("birthday")) {
         msg = Message()
           ..from = Address(emailId, mailtype)
           ..recipients.add(element)
           ..subject = subject
-          ..html = ConstRes.html.replaceAll("{{name}}", body);
+          ..html = ConstRes.html.replaceAll("{{name}}", names[receipt.indexOf(element)]);
       } else {
         msg = Message()
           ..from = Address(emailId, mailtype)
@@ -58,14 +59,15 @@ class SendSmtp {
 
     for (var email in emailQueue) {
       try {
-        send(email, smtpServer).then((value) => {
-              sendreport.add(value),
-              SnackBarWidget.snackBar(message: "Mail hits your inbox"),
-              print('Message sent: ' + value.toString())
-            });
-        // await connection.send(email).then((value) => {
-        //   sendreport.add(value)
-        // });
+        // send(email, smtpServer).then((value) => {
+        //       sendreport.add(value),
+        //       SnackBarWidget.snackBar(message: "Mail hits your inbox"),
+        //       print('Message sent: ' + value.toString())
+        //     });
+        await connection.send(email).then((value) => {
+          SnackBarWidget.snackBar(message: "Mail hits your inbox"),
+          sendreport.add(value)
+        });
       } on MailerException catch (e) {
         print('Message not sent. $e');
         for (var p in e.problems) {
