@@ -13,12 +13,12 @@ class HomeView extends StatelessWidget {
     return ViewModelBuilder<HomeViewModel>.reactive(
       onViewModelReady: (model) {
         model.mailSubject.text = "Happy Birthday";
-        model.mailPerson.text = "birthday";
+        model.mailPerson.text = "IOV Wishes";
         // model.receipientController.text = "pro@iovrvf.org,mep@iovrvf.org,cep@iovrvf.org,arun@iovrvf.org,accounts@iovrvf.org,singhaniavishesh16@gmail.com,monitoring@iovrvf.org";
         // model.messageController.text = "Mr. Pro,Mr. MEP,Mr. CEP,Mr. Arun,Mr. Accounts,Mr Vishesh Singhania,Mr.Monitor";
 
-        model.receipientController.text = "singhaniavishesh16@gmail.com,satyamiovrvf@gmail.com,fervidmail@gmail.com,fervidbuddy@gmail.com,satyamojha121@gmail.com";
-        model.messageController.text = "Vishesh,Satyam,Fervid,Buddy,Ojha";
+        // model.receipientController.text = "singhaniavishesh16@gmail.com,satyamiovrvf@gmail.com,fervidmail@gmail.com,fervidbuddy@gmail.com,satyamojha121@gmail.com";
+        // model.messageController.text = "Vishesh,Satyam,Fervid,Buddy,Ojha";
         // model.receipientController.text = "satyamiovrvf@gmail.com";
         // model.messageController.text = "satyam";
       },
@@ -103,6 +103,7 @@ class HomeView extends StatelessWidget {
                                   controller: model.receipientController,
                                   keyboardType: TextInputType.emailAddress,
                                   decoration: InputDecoration(
+                                    labelText: "Person's Email-Id",
                                       border: OutlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.indigoAccent,
@@ -110,16 +111,30 @@ class HomeView extends StatelessWidget {
                                       hintText: "Receipient Address"),
                                 ),
                                 SizedBox(
-                                  height: 10,
+                                  height: 15,
                                 ),
                                 TextField(
                                   controller: model.messageController,
                                   decoration: InputDecoration(
+                                    labelText: "Person Name",
                                       border: OutlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.indigoAccent,
                                               width: 1)),
                                       hintText: "Birthday Name"),
+                                ),
+                                SizedBox(
+                                  height: 15,
+                                ),
+                                TextField(
+                                  controller: model.ivcIDController,
+                                  decoration: InputDecoration(
+                                    labelText: "Registration ID",
+                                      border: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.indigoAccent,
+                                              width: 1)),
+                                      hintText: "Registration ID"),
                                 ),
                                 SizedBox(
                                   height: 10,
@@ -131,16 +146,27 @@ class HomeView extends StatelessWidget {
                                             .receipientController.text.trim().replaceAll(" ", "")
                                             .split(",");
                                         List<String> names = model
-                                            .messageController.text.trim().replaceAll(" ", "")
+                                            .messageController.text.trim()
+                                            .split(",");
+
+                                        List<String> ivcID = model
+                                            .ivcIDController.text.trim().replaceAll(" ", "").toUpperCase()
                                             .split(",");
 
                                         if (emails.length == names.length) {
-                                          SendSmtp mails = SendSmtp(
-                                              emails,
-                                              names,
-                                              model.mailPerson.text,
-                                              model.mailSubject.text);
-                                          await mails.sendmails();
+                                         if(names.length==ivcID.length){
+                                           SendSmtp mails = SendSmtp(
+                                               emails,
+                                               names,
+                                               ivcID,
+                                               model.mailPerson.text,
+                                               model.mailSubject.text);
+                                           await mails.sendmails();
+                                         }else{
+                                           SnackBarWidget.snackBar(
+                                               message:
+                                               "Provide All users IVC IDs");
+                                         }
                                         } else
                                           SnackBarWidget.snackBar(
                                               message:
