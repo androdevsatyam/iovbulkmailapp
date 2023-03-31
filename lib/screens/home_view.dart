@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:iovbulkmailapp/screens/viewmodel/home_view_model.dart';
 import 'package:iovbulkmailapp/widgets/SnackBarWidget.dart';
@@ -14,13 +16,8 @@ class HomeView extends StatelessWidget {
       onViewModelReady: (model) {
         model.mailSubject.text = "Happy Birthday";
         model.mailPerson.text = "IOV Wishes";
-        // model.receipientController.text = "pro@iovrvf.org,mep@iovrvf.org,cep@iovrvf.org,arun@iovrvf.org,accounts@iovrvf.org,singhaniavishesh16@gmail.com,monitoring@iovrvf.org";
-        // model.messageController.text = "Mr. Pro,Mr. MEP,Mr. CEP,Mr. Arun,Mr. Accounts,Mr Vishesh Singhania,Mr.Monitor";
 
-        // model.receipientController.text = "singhaniavishesh16@gmail.com,satyamiovrvf@gmail.com,fervidmail@gmail.com,fervidbuddy@gmail.com,satyamojha121@gmail.com";
-        // model.messageController.text = "Vishesh,Satyam,Fervid,Buddy,Ojha";
-        // model.receipientController.text = "satyamiovrvf@gmail.com";
-        // model.messageController.text = "satyam";
+        model.subjectFocusNode.addListener(model.onSubjectFocusChange);
       },
       viewModelBuilder: () => HomeViewModel(),
       builder: (context, model, chile) {
@@ -46,8 +43,7 @@ class HomeView extends StatelessWidget {
                                 left: 10, right: 10, top: 10, bottom: 10),
                             margin: EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                                border: Border.all(
-                                    color: Colors.black54, width: 1.5)),
+                                border: Border.all(color: Colors.black54, width: 1.5)),
                             child: Column(
                               children: [
                                 Text("Mail Setup",
@@ -68,6 +64,7 @@ class HomeView extends StatelessWidget {
                                   height: 10,
                                 ),
                                 TextField(
+                                  focusNode: model.subjectFocusNode,
                                   controller: model.mailSubject,
                                   decoration: InputDecoration(
                                       border: OutlineInputBorder(
@@ -103,7 +100,7 @@ class HomeView extends StatelessWidget {
                                   controller: model.receipientController,
                                   keyboardType: TextInputType.emailAddress,
                                   decoration: InputDecoration(
-                                    labelText: "Person's Email-Id",
+                                      labelText: "Person's Email-Id",
                                       border: OutlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.indigoAccent,
@@ -113,29 +110,41 @@ class HomeView extends StatelessWidget {
                                 SizedBox(
                                   height: 15,
                                 ),
-                                TextField(
-                                  controller: model.messageController,
-                                  decoration: InputDecoration(
-                                    labelText: "Person Name",
-                                      border: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.indigoAccent,
-                                              width: 1)),
-                                      hintText: "Birthday Name"),
-                                ),
-                                SizedBox(
-                                  height: 15,
-                                ),
-                                TextField(
-                                  controller: model.ivcIDController,
-                                  decoration: InputDecoration(
-                                    labelText: "Registration ID",
-                                      border: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.indigoAccent,
-                                              width: 1)),
-                                      hintText: "Registration ID"),
-                                ),
+                                if (model.wishes) ...{
+                                  TextField(
+                                    controller: model.messageController,
+                                    decoration: InputDecoration(
+                                        labelText: "Person Name",
+                                        border: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.indigoAccent,
+                                                width: 1)),
+                                        hintText: "Birthday Name"),
+                                  ),
+                                  SizedBox(
+                                    height: 15,
+                                  ),
+                                  TextField(
+                                    controller: model.ivcIDController,
+                                    decoration: InputDecoration(
+                                        labelText: "Registration ID",
+                                        border: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.indigoAccent,
+                                                width: 1)),
+                                        hintText: "Registration ID"),
+                                  )
+                                } else
+                                  TextField(
+                                    controller: model.msgBodyController,
+                                    decoration: InputDecoration(
+                                        labelText: "Message Body",
+                                        border: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.indigoAccent,
+                                                width: 1)),
+                                        hintText: "Your Mail Text"),
+                                  ),
                                 SizedBox(
                                   height: 10,
                                 ),
@@ -143,30 +152,59 @@ class HomeView extends StatelessWidget {
                                   child: ElevatedButton(
                                       onPressed: () async {
                                         List<String> emails = model
-                                            .receipientController.text.trim().replaceAll(" ", "")
+                                            .receipientController.text
+                                            .trim()
+                                            .replaceAll(" ", "")
                                             .split(",");
                                         List<String> names = model
-                                            .messageController.text.trim()
+                                            .messageController.text
+                                            .trim()
                                             .split(",");
 
-                                        List<String> ivcID = model
-                                            .ivcIDController.text.trim().replaceAll(" ", "").toUpperCase()
-                                            .split(",");
-
+                                        List<String> ivcID =
+                                            model.ivcIDController.text.isEmpty
+                                                ? []
+                                                : model.ivcIDController.text
+                                                    .trim()
+                                                    .replaceAll(" ", "")
+                                                    .toUpperCase()
+                                                    .split(",");
                                         if (emails.length == names.length) {
-                                         if(names.length==ivcID.length){
-                                           SendSmtp mails = SendSmtp(
-                                               emails,
-                                               names,
-                                               ivcID,
-                                               model.mailPerson.text,
-                                               model.mailSubject.text);
-                                           await mails.sendmails();
-                                         }else{
-                                           SnackBarWidget.snackBar(
-                                               message:
-                                               "Provide All users IVC IDs");
-                                         }
+                                          if (model.wishes) {
+                                            if (names.length == ivcID.length) {
+                                              SendSmtp mails = SendSmtp(
+                                                  emails,
+                                                  names,
+                                                  ivcID,
+                                                  model.mailPerson.text,
+                                                  model.mailSubject.text);
+                                              await mails.sendmails();
+                                            } else {
+                                              SnackBarWidget.snackBar(
+                                                  message:
+                                                      "Provide All users IVC IDs");
+                                            }
+                                          } else {
+                                            if (model.msgBodyController.text
+                                                .isNotEmpty) {
+                                              SendSmtp mails = SendSmtp.info(
+                                                  emails,
+                                                  names,
+                                                  model.msgBodyController.text
+                                                      .toString(),
+                                                  model.mailPerson.text,
+                                                  model.mailSubject.text);
+                                              try {
+                                                await mails.sendmails();
+                                              }catch(e){
+                                                print(e);
+                                              }
+                                            } else {
+                                              SnackBarWidget.snackBar(
+                                                  message:
+                                                      "Mail Body Can't be Empty");
+                                            }
+                                          }
                                         } else
                                           SnackBarWidget.snackBar(
                                               message:

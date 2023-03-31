@@ -1,21 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
 import '../../widgets/SnackBarWidget.dart';
+import '../imap/imapparser.dart';
 import '../widgets/const_res.dart';
 
 class SendSmtp {
-  // String username = 'satyamiovrvf@gmail.com';
-  // String password = 'zzqwblnarqpblfel'; // 2 Step password
-  // String password = '2023IOVsatyam';
-
-  // String emailId = 'satyam@iovrvf.org';
-  // String emailPass = 'Satyam19sep!@';
-
   String emailId = 'no-reply@iovrvf.net';
-  String emailPass = 'iK;@e1%(a8{G';
+  String emailPass = 'iK;@e1%(a';
 
-  // String receipt='';
   List<String> receipt = [];
   List<String> names = [];
   List<String> ivcID = [];
@@ -23,8 +18,7 @@ class SendSmtp {
   List<Message> emailQueue = [];
   List<SendReport> sendreport = [];
 
-  SendSmtp(List<String> emails, List<String> names,List<String> ivcID, String mailtype,
-      String subject) {
+  SendSmtp(List<String> emails, List<String> names, List<String> ivcID,String mailtype, String subject) {
     print("data receive $emails $names");
     receipt = emails;
     this.names = names;
@@ -33,8 +27,18 @@ class SendSmtp {
     this.subject = subject;
   }
 
+  SendSmtp.info(List<String> emails, List<String> names, String body, String mailtype, String subject) {
+    print("data receive $emails $names");
+    receipt = emails;
+    this.names = names;
+    this.body = body;
+    this.mailtype = mailtype;
+    this.subject = subject;
+  }
+
   sendmails() async {
-    final smtpServer = SmtpServer('iovrvf.org',
+    // Connect to SMTP server
+    final smtpServer = SmtpServer('iovrvf.net',//'smtp.gmail.com',
         username: emailId,
         password: emailPass,
         port: 465,
@@ -46,16 +50,17 @@ class SendSmtp {
       if (subject.toLowerCase().contains("birthday")) {
         msg = Message()
           ..from = Address(emailId, mailtype)
+          ..bccRecipients.add(Address(emailId))
           ..recipients.add(element)
           ..subject = subject
           ..html = genericUrl(
               ConstRes.html,
               Uri.encodeComponent(names[receipt.indexOf(element)]),
               Uri.encodeComponent(ivcID[receipt.indexOf(element)]));
-        // ConstRes.html.replaceAll("{{name}}", Uri.encodeComponent(names[receipt.indexOf(element)]));
       } else {
         msg = Message()
           ..from = Address(emailId, mailtype)
+          // ..bccRecipients.add(Address(emailId))
           ..recipients.add(element)
           ..subject = subject
           ..text = body;
@@ -63,7 +68,6 @@ class SendSmtp {
       emailQueue.add(msg);
     });
 
-    print("emailqueue=$emailQueue =>" + emailQueue.length.toString());
 
     var connection = PersistentConnection(smtpServer);
 
@@ -71,22 +75,43 @@ class SendSmtp {
       try {
         await connection.send(email).then((value) => {
               SnackBarWidget.snackBar(message: "Mail hits your inbox"),
+              print('send report=>$value'),
               sendreport.add(value)
             });
+
       } on MailerException catch (e) {
         print('Message not sent. $e');
-        for (var p in e.problems) {
-          print('Problem: ${p.code}: ${p.msg}');
+        if (e.problems.isNotEmpty) {
+          for (var p in e.problems) {
+            print('Problem: ${p.code}: ${p.msg}');
+          }
+        }
+        else {
+          SnackBarWidget.snackBar(
+              message:
+                  e.message.toLowerCase().contains("Incorrect authentication")
+                      ? 'incorrect authentication'
+                      : e.message);
         }
       }
     }
+
     await connection.close();
   }
 
   String genericUrl(String str, String name, String id) {
     str = str.replaceAll('{{name}}', name);
-    str = str.replaceAll('{{register_no}}', id);
+    if (id.toLowerCase() == "employee") {
+      str = str.replaceAll('{{register_no}}', '');
+    } else {
+      str = str.replaceAll('{{register_no}}', id);
+    }
     return str;
+  }
+
+  Future<List<SendReport>> sendMultiple(List<Message> messages, SmtpServer smtpServer) async {
+    final sendReports = await Future.wait(messages.map((message) => send(message, smtpServer)));
+    return sendReports.toList();
   }
 
 // sendmails() async {
